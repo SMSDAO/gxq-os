@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --color-dragon-primary: #00FF88;
+  --color-dragon-secondary: #00D5FF;
+  --color-dragon-accent: #7C3AED;
+  --color-dragon-bg: #020617;
+}
+
+:root {
+  background-color: var(--color-dragon-bg);
+  color: white;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+.glass {
+  @apply bg-black/40 backdrop-blur-xl border border-white/10;
+}
+
+.glass-emerald {
+  @apply bg-emerald-500/10 backdrop-blur-xl border border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)];
+}
+
+.glass-cyan {
+  @apply bg-cyan-500/10 backdrop-blur-xl border border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.1)];
+}
+
+.glass-purple {
+  @apply bg-purple-500/10 backdrop-blur-xl border border-purple-500/20 shadow-[0_0_20px_rgba(168,85,247,0.1)];
+}
+
+.neon-glow-emerald {
+  @apply shadow-[0_0_15px_rgba(16,185,129,0.5)];
+}
+
+.neon-text-emerald {
+  @apply text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)];
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+}
+
+.window-snap-ghost {
+  @apply fixed pointer-events-none bg-blue-500/20 border-2 border-blue-400/50 backdrop-blur-sm z-[9999] rounded-lg transition-all duration-200;
+}

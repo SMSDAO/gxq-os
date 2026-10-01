@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Master deny-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(ownerId) {
+      return isSignedIn() && request.auth.uid == ownerId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPER_ADMIN';
+    }
+
+    // Validation Blueprint for User
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'role']) &&
+             data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'role', 'orgId', 'createdAt', 'lastLogin', 'onboarded']) &&
+             data.uid == request.auth.uid &&
+             (data.email == null || data.email is string) &&
+             data.role in ['SUPER_ADMIN', 'USER', 'AUDITOR'];
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create: if isVerified() && userId == request.auth.uid && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) &&
+                      request.resource.data.role == resource.data.role; 
+    }
+
+    // Validation Blueprint for Organization
+    function isValidOrg(data) {
+      return data.keys().hasAll(['id', 'name', 'ownerId']) &&
+             data.keys().hasOnly(['id', 'name', 'ownerId', 'tier', 'createdAt']) &&
+             data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 100;
+    }
+
+    match /organizations/{orgId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create: if isVerified() && isValidOrg(request.resource.data);
+      allow update: if isAdmin() || isOwner(resource.data.ownerId);
+    }
+
+    // Validation Blueprint for Workspace
+    function isValidWorkspace(data) {
+      return data.keys().hasAll(['id', 'orgId', 'name']) &&
+             data.keys().hasOnly(['id', 'orgId', 'name', 'createdBy', 'createdAt']) &&
+             data.name is string && data.name.size() <= 100;
+    }
+
+    match /workspaces/{workspaceId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn(); // Requires query filtering in production, but allowing for now to unblock
+      allow create: if isVerified() && isValidWorkspace(request.resource.data);
+      allow update: if isVerified() && (isAdmin() || request.resource.data.orgId == resource.data.orgId);
+    }
+
+    // Validation Blueprint for FeatureFlag
+    function isValidFlag(data) {
+      return data.keys().hasAll(['key', 'enabled', 'scope']) &&
+             data.keys().hasOnly(['key', 'enabled', 'scope', 'targetId', 'description']) &&
+             data.key is string && data.key.size() <= 100;
+    }
+
+    match /feature_flags/{flagId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Validation Blueprint for FileSystemNode
+    function isValidFile(data) {
+      return data.keys().hasAll(['id', 'name', 'type', 'ownerId']) &&
+             data.keys().hasOnly(['id', 'parentId', 'name', 'type', 'content', 'ownerId', 'size', 'mimeType', 'createdAt', 'updatedAt']) &&
+             data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 255;
+    }
+
+    match /files/{fileId} {
+      allow get: if isOwner(resource.data.ownerId);
+      allow list: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerified() && isValidFile(request.resource.data);
+      allow update: if isOwner(resource.data.ownerId) && isValidFile(request.resource.data);
+      allow delete: if isOwner(resource.data.ownerId);
+    }
+
+    match /audit_logs/{logId} {
+      allow create: if isSignedIn();
+      allow read: if isAdmin();
+    }
+  }
+}

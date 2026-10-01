@@ -1,0 +1,119 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and system roles",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["SUPER_ADMIN", "USER", "AUDITOR"] },
+        "orgId": { "type": "string", "description": "ID of the primary organization" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastLogin": { "type": "string", "format": "date-time" },
+        "onboarded": { "type": "boolean" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Organization": {
+      "title": "Organization",
+      "description": "Enterprise organization",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "tier": { "type": "string", "enum": ["FREE", "PRO", "ENTERPRISE", "ELITE"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "ownerId"]
+    },
+    "Workspace": {
+      "title": "Workspace",
+      "description": "Team collaboration space",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orgId": { "type": "string" },
+        "name": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "orgId", "name"]
+    },
+    "FeatureFlag": {
+      "title": "Feature Flag",
+      "description": "System feature toggle",
+      "type": "object",
+      "properties": {
+        "key": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "scope": { "type": "string", "enum": ["GLOBAL", "ORG", "WORKSPACE"] },
+        "targetId": { "type": "string", "description": "ID of org or workspace if not global" },
+        "description": { "type": "string" }
+      },
+      "required": ["key", "enabled", "scope"]
+    },
+    "FileSystemNode": {
+      "title": "File System Node",
+      "description": "Represents a file or folder in the VFS",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "parentId": { "type": "string", "description": "ID of parent folder, 'root' for top-level" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["file", "folder"] },
+        "content": { "type": "string", "description": "File content or metadata" },
+        "ownerId": { "type": "string" },
+        "size": { "type": "number" },
+        "mimeType": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "type", "ownerId"]
+    },
+    "AuditLog": {
+      "title": "Audit Log",
+      "description": "Enterprise security audit trails",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "action": { "type": "string" },
+        "resource": { "type": "string" },
+        "metadata": { "type": "object" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["success", "failure", "blocked"] }
+      },
+      "required": ["userId", "action", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/organizations/{orgId}": {
+      "schema": "Organization",
+      "description": "Enterprise organizations"
+    },
+    "/workspaces/{workspaceId}": {
+      "schema": "Workspace",
+      "description": "Collaboration spaces"
+    },
+    "/feature_flags/{flagId}": {
+      "schema": "FeatureFlag",
+      "description": "System feature toggles"
+    },
+    "/files/{fileId}": {
+      "schema": "FileSystemNode",
+      "description": "Virtual File System nodes"
+    },
+    "/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Security audit logs"
+    }
+  }
+}
